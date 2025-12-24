@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Logo } from "./logo";
 
 type PageHeaderProps = {
   title: string;
@@ -9,9 +10,7 @@ type PageHeaderProps = {
 export function PageHeader({ title, subtitle, className }: PageHeaderProps) {
   return (
     <header className={cn("py-8 text-center md:py-12", className)}>
-      <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-        {title}
-      </h1>
+      <Logo className="justify-center" />
       {subtitle && (
         <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">{subtitle}</p>
       )}
