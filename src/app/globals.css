@@ -86,13 +86,25 @@
     cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%230b3c6a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-message-circle'%3E%3Cpath d='M7.9 20A9 9 0 1 0 4 16.1L2 22Z'/%3E%3C/svg%3E") 4 4, auto;
   }
 
-  .light body {
-    background-image: radial-gradient(circle at 1px 1px, hsl(var(--secondary)) 1px, hsl(var(--background)) 0);
-    background-size: 2rem 2rem;
+  .aurora-bg {
+    opacity: 0.2;
+    filter: blur(100px);
   }
 
-  .dark body {
-    background-image: radial-gradient(circle at 1px 1px, hsl(var(--secondary) / 0.5) 1px, hsl(var(--background)) 0);
-    background-size: 2.5rem 2.5rem;
+  .aurora-bg div {
+    animation: aurora-anim 30s infinite linear;
+  }
+
+  .aurora-bg div:nth-child(2) { animation-delay: 5s; }
+  .aurora-bg div:nth-child(3) { animation-delay: 10s; }
+  .aurora-bg div:nth-child(4) { animation-delay: 15s; }
+  .aurora-bg div:nth-child(5) { animation-delay: 20s; }
+  .aurora-bg div:nth-child(6) { animation-delay: 25s; }
+
+  @keyframes aurora-anim {
+    0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+    25% { transform: scale(1.5) translateX(80px) rotate(30deg); opacity: 0.3; }
+    50% { transform: scale(1.2) translateY(50px) rotate(-20deg); opacity: 0.6; }
+    75% { transform: scale(1.4) translateX(-70px) rotate(10deg); opacity: 0.4; }
   }
 }
