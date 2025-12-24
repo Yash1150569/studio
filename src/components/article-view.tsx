@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { revitalizeArticle } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles } from 'lucide-react';
+import { Logo } from './logo';
 
 export function ArticleView({ article }: { article: Article }) {
   const [isUpdating, setIsUpdating] = useState(false);
@@ -68,7 +69,9 @@ export function ArticleView({ article }: { article: Article }) {
       <CardContent className="p-6 md:p-8 relative">
         {isUpdating && (
            <div className="absolute inset-0 bg-background/80 flex flex-col items-center justify-center z-10">
-             <Loader2 className="h-12 w-12 animate-spin text-primary" />
+             <div className="animate-pulse-glow">
+              <Logo />
+             </div>
              <p className="mt-4 text-muted-foreground font-medium">AI is rewriting the article...</p>
              <p className="text-sm text-muted-foreground">This may take a moment.</p>
            </div>
