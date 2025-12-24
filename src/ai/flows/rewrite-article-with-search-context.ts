@@ -9,7 +9,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 const RewriteArticleWithSearchContextInputSchema = z.object({
@@ -32,8 +31,13 @@ export type RewriteArticleWithSearchContextOutput = z.infer<
 
 async function scrapeArticle(url: string): Promise<string> {
   try {
-    const html = await axios.get(url);
-    const $ = cheerio.load(html.data);
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error('Error fetching article for scraping', url, response.statusText);
+      return '';
+    }
+    const html = await response.text();
+    const $ = cheerio.load(html);
     return $('article, main').text().trim().slice(0, 4000);
   } catch (e) {
     console.error('Error scraping article', url, e);
@@ -94,12 +98,20 @@ const rewriteArticleWithSearchContextFlow = ai.defineFlow(
       throw new Error('The SERPAPI_API_KEY environment variable is not set. Please add it to your .env file.');
     }
     console.log('SERPAPI_API_KEY is present.');
+    
+    const searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(input.title)}&api_key=${process.env.SERPAPI_API_KEY}`;
+    
+    const searchResponse = await fetch(searchUrl);
 
-    const search = await axios.get(
-      `https://serpapi.com/search.json?q=${encodeURIComponent(input.title)}&api_key=${process.env.SERPAPI_API_KEY}`
-    );
+    if (!searchResponse.ok) {
+      const errorBody = await searchResponse.text();
+      console.error('SerpApi request failed:', searchResponse.status, errorBody);
+      throw new Error(`SerpApi request failed with status ${searchResponse.status}`);
+    }
 
-    const links = search.data.organic_results
+    const searchData = await searchResponse.json();
+
+    const links = searchData.organic_results
       .filter((r: any) => r.link.includes('blog') || r.snippet?.length > 200)
       .slice(0, 2)
       .map((r: any) => r.link);
