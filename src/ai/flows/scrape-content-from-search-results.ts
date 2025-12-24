@@ -49,6 +49,10 @@ const ScrapeContentFromSearchResultsFlow = ai.defineFlow(
     outputSchema: ScrapeContentFromSearchResultsOutputSchema,
   },
   async input => {
+    if (!process.env.SERPAPI_API_KEY) {
+      throw new Error('SERPAPI_API_KEY is not defined in the environment variables. Please add it to your .env file.');
+    }
+    
     const search = await axios.get(
       `https://serpapi.com/search.json?q=${input.articleTitle}&api_key=${process.env.SERPAPI_API_KEY}`
     );
