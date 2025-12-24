@@ -19,16 +19,9 @@ export function ArticleView({ article }: { article: Article }) {
     const result = await revitalizeArticle(currentArticle.title, currentArticle.content);
 
     if (result.success && result.data) {
-      const referenceHtml = `
-        <h3 class="mt-8 text-xl font-semibold border-b pb-2 mb-4">References</h3>
-        <ul class="list-disc pl-5 mt-2 space-y-2">
-          ${result.data.referenceLinks.map(link => `<li><a href="${link}" target="_blank" rel="noopener noreferrer" class="text-primary underline hover:no-underline">${link}</a></li>`).join('')}
-        </ul>
-      `;
-
       setCurrentArticle({
         ...currentArticle,
-        content: result.data.updatedContent + referenceHtml,
+        content: result.data.updatedContent,
         is_updated: true,
       });
       toast({
