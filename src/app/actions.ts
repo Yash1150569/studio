@@ -3,8 +3,16 @@
 import { rewriteArticleWithSearchContext } from '@/ai/flows/rewrite-article-with-search-context';
 
 export async function revitalizeArticle(title: string, content: string) {
+  const serpApiKey = process.env.SERPAPI_API_KEY;
+
+  if (!serpApiKey) {
+    const errorMessage = 'The SERPAPI_API_KEY environment variable is not set on the server. Please add it to your .env file.';
+    console.error(errorMessage);
+    return { success: false, error: `AI revitalization failed. ${errorMessage}` };
+  }
+  
   try {
-    const result = await rewriteArticleWithSearchContext({ title, content });
+    const result = await rewriteArticleWithSearchContext({ title, content, serpApiKey });
     return { success: true, data: result };
   } catch (error) {
     console.error('Error during article revitalization:', error);

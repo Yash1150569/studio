@@ -14,6 +14,7 @@ import * as cheerio from 'cheerio';
 const RewriteArticleWithSearchContextInputSchema = z.object({
   title: z.string().describe('The title of the article to rewrite.'),
   content: z.string().describe('The content of the article to rewrite.'),
+  serpApiKey: z.string().describe('The SerpApi API key.'),
 });
 
 export type RewriteArticleWithSearchContextInput = z.infer<
@@ -92,14 +93,7 @@ const rewriteArticleWithSearchContextFlow = ai.defineFlow(
     outputSchema: RewriteArticleWithSearchContextOutputSchema,
   },
   async input => {
-    console.log('Attempting to revitalize article. Checking for SERPAPI_API_KEY.');
-    if (!process.env.SERPAPI_API_KEY) {
-      console.error('SERPAPI_API_KEY not found.');
-      throw new Error('The SERPAPI_API_KEY environment variable is not set. Please add it to your .env file.');
-    }
-    console.log('SERPAPI_API_KEY is present.');
-    
-    const searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(input.title)}&api_key=${process.env.SERPAPI_API_KEY}`;
+    const searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(input.title)}&api_key=${input.serpApiKey}`;
     
     const searchResponse = await fetch(searchUrl);
 
@@ -134,7 +128,8 @@ const rewriteArticleWithSearchContextFlow = ai.defineFlow(
     console.log('Successfully scraped content. Generating rewritten article...');
 
     const {output} = await rewriteArticleWithSearchContextPrompt({
-      ...input,
+      title: input.title,
+      content: input.content,
       content1,
       content2,
     });
