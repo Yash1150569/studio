@@ -31,9 +31,14 @@ export type RewriteArticleWithSearchContextOutput = z.infer<
 >;
 
 async function scrapeArticle(url: string): Promise<string> {
-  const html = await axios.get(url);
-  const $ = cheerio.load(html.data);
-  return $('article').text();
+  try {
+    const html = await axios.get(url);
+    const $ = cheerio.load(html.data);
+    return $('article, main').text().trim().slice(0, 4000);
+  } catch (e) {
+    console.error('Error scraping article', url, e);
+    return '';
+  }
 }
 
 export async function rewriteArticleWithSearchContext(
@@ -44,9 +49,36 @@ export async function rewriteArticleWithSearchContext(
 
 const rewriteArticleWithSearchContextPrompt = ai.definePrompt({
   name: 'rewriteArticleWithSearchContextPrompt',
-  input: {schema: RewriteArticleWithSearchContextInputSchema},
+  input: {schema: z.object({
+    title: z.string(),
+    content: z.string(),
+    content1: z.string(),
+    content2: z.string(),
+  })},
   output: {schema: RewriteArticleWithSearchContextOutputSchema},
-  prompt: `Rewrite the following article to improve structure, SEO, and clarity by taking inspiration from the two reference articles.\n\nOriginal:\n{{{content}}}\n\nReference 1:\n{{{content1}}}\n\nReference 2:\n{{{content2}}}\n\nReturn clean HTML content. Also list the URLs of the reference articles used.`,
+  prompt: `You are a professional content editor.
+
+Rewrite the following article using:
+• Clear headings
+• Short paragraphs
+• SEO-friendly tone
+• Human readability
+
+DO NOT plagiarize.
+Cite references naturally.
+
+Original Article:
+Title: {{{title}}}
+Content:
+{{{content}}}
+
+Reference Article 1:
+{{{content1}}}
+
+Reference Article 2:
+{{{content2}}}
+
+Return clean HTML content for the rewritten article. Also list the URLs of the reference articles used.`,
 });
 
 const rewriteArticleWithSearchContextFlow = ai.defineFlow(
@@ -56,22 +88,38 @@ const rewriteArticleWithSearchContextFlow = ai.defineFlow(
     outputSchema: RewriteArticleWithSearchContextOutputSchema,
   },
   async input => {
-    console.log('Checking for SERPAPI_API_KEY. Found:', !!process.env.SERPAPI_API_KEY);
+    console.log('Attempting to revitalize article. Checking for SERPAPI_API_KEY.');
     if (!process.env.SERPAPI_API_KEY) {
-      throw new Error('The SERPAPI_API_KEY environment variable is not set. Please add it to your .env file to use the article revitalization feature.');
+      console.error('SERPAPI_API_KEY not found.');
+      throw new Error('The SERPAPI_API_KEY environment variable is not set. Please add it to your .env file.');
     }
+    console.log('SERPAPI_API_KEY is present.');
 
     const search = await axios.get(
-      `https://serpapi.com/search.json?q=${input.title}&api_key=${process.env.SERPAPI_API_KEY}`
+      `https://serpapi.com/search.json?q=${encodeURIComponent(input.title)}&api_key=${process.env.SERPAPI_API_KEY}`
     );
 
     const links = search.data.organic_results
-      .filter((r: any) => r.type === 'organic')
+      .filter((r: any) => r.link.includes('blog') || r.snippet?.length > 200)
       .slice(0, 2)
       .map((r: any) => r.link);
+    
+    if (links.length < 2) {
+      throw new Error('Could not find enough relevant articles to use as references.');
+    }
 
-    const content1 = await scrapeArticle(links[0]);
-    const content2 = await scrapeArticle(links[1]);
+    console.log('Found reference links:', links);
+
+    const [content1, content2] = await Promise.all([
+      scrapeArticle(links[0]),
+      scrapeArticle(links[1]),
+    ]);
+    
+    if (!content1 || !content2) {
+      throw new Error('Failed to scrape content from one or more reference articles.');
+    }
+
+    console.log('Successfully scraped content. Generating rewritten article...');
 
     const {output} = await rewriteArticleWithSearchContextPrompt({
       ...input,
